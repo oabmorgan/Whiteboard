@@ -1,0 +1,95 @@
+<html>
+    <head>
+        <style>
+            body{
+                margin: 0;
+                box-sizing: border-box;
+            }
+            #ui{
+                position: fixed;
+                width: 100%;
+                background-color: rgba(66, 66, 66, 0.541);
+                display: flex;
+                justify-content: flex-end; 
+            }
+
+            #gallery{
+                height: 100%;
+                width: 100%;
+            }
+
+            .frame{
+                box-sizing: border-box;
+                width: 20%;
+                float: left;
+                border: 1px solid black;
+            }
+
+            .art{
+                width: 100%;
+            }
+
+            .name{
+                text-align: center;
+                font-size: 1em;
+            }
+
+            .btn{
+                width: 50px;
+                margin: 5px;
+                border: none;
+                background-color: rgb(0, 0, 0);
+                border-radius: 12px;
+            }
+            .btn:hover{
+                background-color: rgb(0, 255, 136);
+            }
+            .btn:active{
+                background-color: rgb(200, 255, 0);
+            }
+
+          </style>
+    </head>
+    <body>
+        <div id="ui">
+            <img class="btn" id="btn_start" src="/images/edit.png">
+            <img class="btn" id="btn_stop" src="/images/cancel.png">
+        </div>
+        <div id="gallery">
+        </div>
+        <script src="/socket.io/socket.io.js"></script>
+        <script>
+            var socket = io();
+
+            window.onload = function() {
+                document.getElementById("btn_start").addEventListener('click', function(){socket.emit('start'); document.getElementById("gallery").innerHTML = ""});
+                document.getElementById("btn_stop").addEventListener('click', function(){socket.emit('stop')});
+            }
+
+            socket.on('post', (socketID, name, art) => {
+
+                let gallery = document.getElementById("gallery");
+
+                let newFrame = document.createElement("div");
+                newFrame.classList.add("frame");
+                gallery.appendChild(newFrame);
+
+                let newArt = document.createElement("img");
+                newArt.src = art;
+                newArt.classList.add("art");
+                newFrame.appendChild(newArt);
+
+                let newName = document.createElement("div");
+                newName.innerText = name;
+                newName.classList.add("name");
+                newFrame.appendChild(newName);
+
+                newFrame.addEventListener('click', function(e){
+                    socket.emit('rate', socketID, "rgb(135, 212, 152)")
+                    newFrame.style.background = "rgb(135, 212, 152)";
+                });
+
+            });
+        </script>
+    </body>
+</html>
