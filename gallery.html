@@ -25,13 +25,29 @@
                 border: 1px solid black;
             }
 
+            .content{
+                display: flex;
+                align-items: center;
+                justify-content: flex-end;
+            }
+
             .art{
                 width: 100%;
             }
 
+            #activeCount{
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 1.4em;
+                color: white;
+            }
+
             .name{
                 text-align: center;
-                font-size: 1em;
+                font-size: 1.2em;
+                width: 100%;
+                overflow: hidden;
             }
 
             .btn{
@@ -41,6 +57,7 @@
                 background-color: rgb(0, 0, 0);
                 border-radius: 12px;
             }
+
             .btn:hover{
                 background-color: rgb(0, 255, 136);
             }
@@ -52,6 +69,7 @@
     </head>
     <body>
         <div id="ui">
+            <div id="activeCount"></div>
             <img class="btn" id="btn_start" src="/images/edit.png">
             <img class="btn" id="btn_stop" src="/images/cancel.png">
         </div>
@@ -66,9 +84,13 @@
                 document.getElementById("btn_stop").addEventListener('click', function(){socket.emit('stop')});
             }
 
-            socket.on('post', (socketID, name, art) => {
-
+            socket.on('post', (socketID, name, art, activeCount) => {
                 let gallery = document.getElementById("gallery");
+                if(activeCount > 0){
+                    document.getElementById("activeCount").innerText = activeCount + " working..."; 
+                } else {
+                    document.getElementById("activeCount").innerText = "done."; 
+                }
 
                 let newFrame = document.createElement("div");
                 newFrame.classList.add("frame");
@@ -79,16 +101,38 @@
                 newArt.classList.add("art");
                 newFrame.appendChild(newArt);
 
+                let newContent = document.createElement("div");
+                newContent.classList.add("content");
+                newFrame.appendChild(newContent);
+
+
                 let newName = document.createElement("div");
                 newName.innerText = name;
                 newName.classList.add("name");
-                newFrame.appendChild(newName);
+                newContent.appendChild(newName);
 
-                newFrame.addEventListener('click', function(e){
+                let newButton_Accept = document.createElement("img");
+                newButton_Accept.classList.add("btn");
+                newButton_Accept.src = "/images/done.png"
+                newContent.appendChild(newButton_Accept);
+
+                let newButton_Refuse = document.createElement("img");
+                newButton_Refuse.classList.add("btn");
+                newButton_Refuse.src = "/images/cancel.png"
+                newContent.appendChild(newButton_Refuse);
+
+                newButton_Refuse.addEventListener('click', function(e){
+                    e.target.parentElement.parentElement.remove();
+                    socket.emit('rate', socketID, "rgb(216, 90, 90)")
+                });
+
+                newButton_Accept.addEventListener('click', function(e){
+                    e.target.parentElement.querySelectorAll('.btn').forEach(function(button) {
+                        button.style.visibility = "hidden";
+                    });
                     socket.emit('rate', socketID, "rgb(135, 212, 152)")
                     newFrame.style.background = "rgb(135, 212, 152)";
                 });
-
             });
         </script>
     </body>
