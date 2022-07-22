@@ -4,8 +4,7 @@ const http = require('http');
 const server = http.createServer(app);
 const { Server } = require("socket.io");
 const io = new Server(server);
-
-var port = 3000;
+var port = process.argv[2];
 const ip = require("ip");
 var activeCount = 0;
 
@@ -26,7 +25,6 @@ io.on('connection', (socket) => {
 	});
 	socket.on('starting',() => {
 		activeCount++;
-		console.log(activeCount);
 	});
 	socket.on('stop', () => {
 		io.emit('stop');
@@ -43,4 +41,10 @@ io.on('connection', (socket) => {
 
 server.listen(port, () => {
 	console.log(ip.address() + ':'+port);
-});
+	let url = 'https://JuIZwQMI3PIdkiw5:8jHKh4dn8xdMnLHw@domains.google.com/nic/update?hostname=whiteboard.omorgan.net&myip='+ip.address();
+	require('https').get(url, (res) => {
+    	res.on('data', function (body) {
+        	console.log(body);
+    	});
+	});
+})

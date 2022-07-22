@@ -4,6 +4,7 @@
             body{
                 margin: 0;
                 box-sizing: border-box;
+                touch-action:none;
             }
             canvas{
                 width: 100%;
@@ -71,6 +72,8 @@
                 document.getElementById("btn_clear").addEventListener('click', function(){start()});
                 document.getElementById("btn_send").addEventListener('click', function(){send()});
 
+                start();
+                stop();
                 resize();
                 rename();
             }
@@ -81,7 +84,7 @@
             }
 
             function rename(){
-                userName = prompt("Enter your name","Name");
+                userName = prompt("What's your name?","");
                 document.getElementById("name").innerText = userName;
             }
 
@@ -142,7 +145,6 @@
                 stop();
                 pen.art = canvas.toDataURL();
                 socket.emit('post', userName, pen.art);
-                canvas.style.background = "rgb(140, 140, 140)";
             }
 
             function rate(color){
@@ -155,6 +157,7 @@
             function stop(){
                 pen.lock = true;
                 document.getElementById("ui").style.visibility = "hidden";
+                canvas.style.background = "rgb(140, 140, 140)";
             }
 
             socket.on('start', function(){start();});
