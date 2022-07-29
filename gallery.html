@@ -3,110 +3,115 @@
         <style>
             body{
                 margin: 0;
+                display: flex;
+                flex-direction: column;
                 box-sizing: border-box;
+                background-color: rgb(148, 212, 255);
             }
             #ui{
-                position: fixed;
                 width: 100%;
+                flex: 1;
                 display: flex;
                 justify-content: flex-end; 
-                background-color: rgba(66, 66, 66, 0.3);
+                background-color: rgba(66, 66, 66, 0.5);
             }
 
             #gallery{
+                flex: 1;
                 height: 100%;
-                width: 100%;
-                background-size: 40%;
-                background-repeat: no-repeat;
-                background-position: center;
+                text-align: center;
             }
 
             .frame{
+                display: inline-block;
                 box-sizing: border-box;
                 width: 20%;
-                float: left;
-                border: 1px solid black;
-                background-color: white;
-            }
-
-            .content{
-                display: flex;
-                align-items: center;
-                justify-content: flex-end;
+                border: 5px solid white;
+                background-color: rgb(245, 245, 245);
+                border-radius: 15px;
+                margin: 8px;
+                box-shadow: 4px 4px 4px rgba(0, 0, 0, 0.3);
+                position: relative;
             }
 
             .art{
                 width: 100%;
             }
 
-            #activeCount{
+            #roomID{
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                font-size: 1.4em;
+                font-size: 3em;
                 color: white;
             }
 
-            .name{
-                text-align: center;
-                font-size: 1.2em;
-                width: 100%;
-                overflow: hidden;
-            }
-
-            #qr{
-                position:absolute;
-                bottom: 20;
-                right: 20;
-                height: 200;
-                width: 200;
-                z-index: 1;
-            }
-
-            .btn{
+            .btn, .closebtn{
                 width: 50px;
                 margin: 5px;
-                border: none;
-                background-color: rgb(0, 0, 0);
-                border-radius: 12px;
+                border: 3px solid white;
+                background-color: rgb(105, 104, 104);
+                border-radius: 30px;
+                padding: 3px;
             }
 
-            .btn:hover{
+            .closebtn{
+                width: 30px;
+                height: 30px;
+                position: absolute;
+                top: 0;
+                right: 0;
+                margin: 0px
+            }
+
+            .btn:hover, .closebtn:hover{
                 background-color: rgb(0, 255, 136);
             }
-            .btn:active{
+            .btn:active, .closebtn:active{
                 background-color: rgb(200, 255, 0);
             }
 
+            #qr{
+                box-sizing: border-box;
+                height: 100%;
+                border: 3px solid white;
+            }
+
           </style>
+          <title>Whiteboard</title>
     </head>
     <body>
         <div id="ui">
-            <div id="activeCount"></div>
-            <img class="btn" id="btn_start" src="/images/edit.png">
-            <img class="btn" id="btn_stop" src="/images/cancel.png">
+            <div id="roomID"></div>
+            <img class="btn" id="btn_start" src="/images/restart.png">
+            <img class="btn" id="btn_stop" src="/images/stop.png">
+            <img id="qr" src="https://chart.googleapis.com/chart?chs=50x50&cht=qr&chl=Hello+world&chld=L|1&choe=UTF-8">
         </div>
-        <img id="qr">
         <div id="gallery">
         </div>
         <script src="/socket.io/socket.io.js"></script>
         <script>
             var socket = io();
+            var roomID;
+            var select;
 
             window.onload = function() {
                 document.getElementById("btn_start").addEventListener('click', function(){socket.emit('start'); document.getElementById("gallery").innerHTML = ""});
                 document.getElementById("btn_stop").addEventListener('click', function(){socket.emit('stop')});
-                document.getElementById("qr").src = "https://chart.googleapis.com/chart?chs=250x250&chld=L|0&cht=qr&chl=http://";
+                document.getElementById("qr").addEventListener('click', function(){window.open("https://chart.googleapis.com/chart?chs=250x250&cht=qr&chl=wb.omorgan.net:5000?roomID="+roomID+"&chld=L|0&choe=UTF-8", '_blank');});
+                let roomID = prompt("RoomID", Math.floor(Math.random()*899) + 100)
+                socket.emit("joinRoom", roomID, true);
             }
 
-            socket.on('post', (socketID, name, art, activeCount) => {
+            socket.on('joinRoom', function(id){
+                roomID = id;
+                document.getElementById("roomID").innerText = roomID;
+                document.getElementById("qr").src = "https://chart.googleapis.com/chart?chs=50x50&cht=qr&chl=wb.omorgan.net:5000?roomID="+roomID+"&chld=L|0&choe=UTF-8"
+                document.querySelector('title').textContent = "Whiteboard ("+roomID+")";
+            });
 
+            socket.on('post', (socketID, art, activeCount) => {
                 let gallery = document.getElementById("gallery");
-                if(activeCount > 0){
-                    document.getElementById("activeCount").innerText = activeCount + " working..."; 
-                } else {
-                    document.getElementById("activeCount").innerText = "done."; 
-                }
 
                 let newFrame = document.createElement("div");
                 newFrame.classList.add("frame");
@@ -115,39 +120,23 @@
                 let newArt = document.createElement("img");
                 newArt.src = art;
                 newArt.classList.add("art");
-                newFrame.appendChild(newArt);
+                newFrame.appendChild(newArt);              
 
-                let newContent = document.createElement("div");
-                newContent.classList.add("content");
-                newFrame.appendChild(newContent);
+                let newClose = document.createElement("img");
+                newClose.src = "/images/upload.png";
+                newClose.id = "closebtn";
+                newClose.classList.add("closebtn");
+                newFrame.append(newClose);
 
-
-                let newName = document.createElement("div");
-                newName.innerText = name;
-                newName.classList.add("name");
-                newContent.appendChild(newName);
-
-                let newButton_Accept = document.createElement("img");
-                newButton_Accept.classList.add("btn");
-                newButton_Accept.src = "/images/done.png"
-                newContent.appendChild(newButton_Accept);
-
-                let newButton_Refuse = document.createElement("img");
-                newButton_Refuse.classList.add("btn");
-                newButton_Refuse.src = "/images/cancel.png"
-                newContent.appendChild(newButton_Refuse);
-
-                newButton_Refuse.addEventListener('click', function(e){
-                    e.target.parentElement.parentElement.remove();
+                newClose.addEventListener('click', function(e){
                     socket.emit('rate', socketID, "rgb(216, 90, 90)")
+                    e.target.parentElement.remove();
                 });
 
-                newButton_Accept.addEventListener('click', function(e){
-                    e.target.parentElement.querySelectorAll('.btn').forEach(function(button) {
-                        button.style.visibility = "hidden";
-                    });
+                newArt.addEventListener('click', function(e){
                     socket.emit('rate', socketID, "rgb(135, 212, 152)")
                     newFrame.style.background = "rgb(135, 212, 152)";
+                    e.target.parentElement.getElementsByClassName("closebtn")[0].remove();
                 });
             });
         </script>

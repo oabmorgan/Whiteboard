@@ -4,9 +4,8 @@ const http = require('http');
 const server = http.createServer(app);
 const { Server } = require("socket.io");
 const io = new Server(server);
-var port = process.argv[2];
+var port = 5000;
 const ip = require("ip");
-var activeCount = 0;
 
 app.use('/images', express.static('images'));
 
@@ -19,29 +18,42 @@ app.get('/gallery', (req, res) => {
 });
 
 io.on('connection', (socket) => {
+	socket.on('joinRoom', (roomID, open = false) => {
+		if(open || io.sockets.adapter.rooms.get(roomID)){
+			socket.join(roomID);
+			io.to(socket.id).emit('joinRoom', roomID);
+		} else {
+			io.to(socket.id).emit('joinRoom', 'fail');
+		}
+	})
 	socket.on('start', () => {
-		activeCount = 0;
-		io.emit('start');
+		io.to(getRoom(socket)).emit('start');
 	});
+
 	socket.on('starting',() => {
-		activeCount++;
 	});
+
 	socket.on('stop', () => {
-		io.emit('stop');
+		io.to(getRoom(socket)).emit('stop');
 	});
-	socket.on('post', (userName, art) => {
-		activeCount--;
-		io.emit('post', socket.id, userName, art, activeCount);
+
+	socket.on('post', (art) => {
+		io.to(getRoom(socket)).emit('post', socket.id, art, 0);
 	});
+
 	socket.on('rate', (socket, color) => {
 		io.to(socket).emit('rate', color);
-		console.log("rating",socket, color);
 	});
 });
 
+function getRoom(socket){
+	let roomArray = Array.from(socket.rooms);
+	return roomArray[roomArray.length-1];
+}
+
 server.listen(port, () => {
 	console.log(ip.address() + ':'+port);
-	let url = 'https://JuIZwQMI3PIdkiw5:8jHKh4dn8xdMnLHw@domains.google.com/nic/update?hostname=whiteboard.omorgan.net&myip='+ip.address();
+	let url = 'https://QKgzmbdX6fuvW0NX:xhj0GS56VBlN59EU@domains.google.com/nic/update?hostname=wb.omorgan.net&myip='+ip.address();
 	require('https').get(url, (res) => {
     	res.on('data', function (body) {
         	console.log(body);

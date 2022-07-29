@@ -20,9 +20,10 @@
             .btn{
                 width: 50px;
                 margin: 5px;
-                border: none;
-                background-color: rgb(0, 0, 0);
-                border-radius: 12px;
+                border: 3px solid white;
+                background-color: rgb(105, 104, 104);
+                border-radius: 30px;
+                padding: 3px;
             }
             .btn:hover{
                 background-color: rgb(0, 255, 136);
@@ -30,20 +31,13 @@
             .btn:active{
                 background-color: rgb(200, 255, 0);
             }
-            #name{
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                font-size: 1.4em;
-                color: white;
-            }
           </style>
+          <title>Whiteboard (Enter Room ID)</title>
     </head>
     <body>
         <div id="ui">
-            <div id="name"></div>
-            <img class="btn" id="btn_clear" src="/images/trash.png">
-            <img class="btn" id="btn_send" src="/images/send.png">
+            <img class="btn" id="btn_clear" src="/images/reload.png">
+            <img class="btn" id="btn_send" src="/images/forward.png">
         </div>
         <canvas id="whiteboard">
         </canvas>
@@ -52,7 +46,8 @@
             var canvas = document.getElementById('whiteboard');
             var context = canvas.getContext('2d');
             var socket = io();
-            var userName;
+            var roomID;
+            var connected = false;
             var pen = {
                     "x": 0,
                     "y": 0,
@@ -62,7 +57,7 @@
                     "down": false
                 }
 
-            window.onload = function() {               
+            window.onload = function() {            
                 canvas.addEventListener('touchstart', penDown);
                 canvas.addEventListener('touchend', penUp);
                 canvas.addEventListener('touchcancel', penUp);
@@ -75,17 +70,17 @@
                 start();
                 stop();
                 resize();
-                rename();
+
+                const params = new Proxy(new URLSearchParams(window.location.search), {
+                    get: (searchParams, prop) => searchParams.get(prop),
+                });
+                roomID = params.roomID;
+                socket.emit("joinRoom", roomID);
             }
 
             function resize(){
                 canvas.width = window.innerWidth;
                 canvas.height = window.innerHeight;
-            }
-
-            function rename(){
-                userName = prompt("What's your name?","");
-                document.getElementById("name").innerText = userName;
             }
 
             function start(){
@@ -144,7 +139,7 @@
             function send(){
                 stop();
                 pen.art = canvas.toDataURL();
-                socket.emit('post', userName, pen.art);
+                socket.emit('post', pen.art);
             }
 
             function rate(color){
@@ -160,9 +155,17 @@
                 canvas.style.background = "rgb(140, 140, 140)";
             }
 
+            socket.on('joinRoom', function(id){
+                if(id=='fail'){
+                    roomID = prompt("Enter Room ID","000");
+                    socket.emit("joinRoom", roomID);
+                } else {
+                    window.history.pushState(null, "Title", "?roomID="+roomID);
+                    document.querySelector('title').textContent = "Whiteboard ("+roomID+")";
+                }
+            });
             socket.on('start', function(){start();});
             socket.on('stop', function(){stop()});
-            socket.on('rename', function(){rename()});
             socket.on('rate', function(color){rate(color)});
 
         </script>
